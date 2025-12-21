@@ -1,24 +1,40 @@
 package src;
-import java.util.List;
 
 public class ConcreteSudokuIterator implements SudokuIterator {
-    private List<int[]> combinations;
-    private int currentIndex = 0;
+    private int[] currentCombination;
+    private boolean hasMore;
 
-    public ConcreteSudokuIterator(List<int[]> combinations) {
-        this.combinations = combinations;
+    public ConcreteSudokuIterator() {
+        this.currentCombination = new int[]{1, 1, 1, 1, 1};
+        this.hasMore = true;
     }
 
     @Override
     public boolean hasNext() {
-        return currentIndex < combinations.size();
+        return hasMore;
     }
 
     @Override
     public int[] next() {
-        if (hasNext()) {
-            return combinations.get(currentIndex++);
+        if (!hasMore) return null;
+
+        int[] result = currentCombination.clone();
+
+        increment(4);
+        return result;
+    }
+
+    private void increment(int index) {
+        if (index < 0) {
+            hasMore = false;
+            return;
         }
-        return null;
+
+        currentCombination[index]++;
+
+        if (currentCombination[index] > 9) {
+            currentCombination[index] = 1;
+            increment(index - 1);
+        }
     }
 }

@@ -1,7 +1,7 @@
 package src;
 
-class SudokuFlyweight {
-    private int[][] board;
+public class SudokuFlyweight {
+    private final int[][] board;
 
     public SudokuFlyweight(int[][] board) {
         this.board = board;
@@ -12,10 +12,21 @@ class SudokuFlyweight {
             int pos = positions[i];
             int row = pos / 9;
             int col = pos % 9;
-            if (board[row][col] != 0) {
-                return false;
+            board[row][col] = combination[i];
+        }
+
+        String result = SudokuVerifier.verify(board);
+        boolean isValid = result.equals("VALID");
+
+        if (!isValid) {
+            for (int i = 0; i < positions.length; i++) {
+                int pos = positions[i];
+                int row = pos / 9;
+                int col = pos % 9;
+                board[row][col] = 0;
             }
         }
-        return true;
+
+        return isValid;
     }
 }
