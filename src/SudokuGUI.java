@@ -13,8 +13,6 @@ public class SudokuGUI extends JFrame {
     private JButton btnVerify, btnSolve, btnUndo;
     private int[][] previousState = new int[9][9];
     private boolean isProgrammaticUpdate = false;
-
-    // NEW: Track current difficulty to know which file to delete
     private String currentDifficulty = "";
 
     public SudokuGUI() {
@@ -81,10 +79,11 @@ public class SudokuGUI extends JFrame {
         Catalog cat = controller.getCatalog();
         try {
             if (cat.current) {
-                // Track that we loaded incomplete
                 currentDifficulty = "incomplete";
-                int[][] board = controller.getGame("incomplete");
-                loadGameToBoard(board);
+                int[][] currentBoard = controller.getGame("incomplete");
+                int[][] initialBoard = controller.getInitialGame("incomplete");
+
+                loadGameToBoard(currentBoard, initialBoard);
                 JOptionPane.showMessageDialog(this, "Resumed unfinished game.");
             }
             else if (cat.allModesExist) {
@@ -115,25 +114,32 @@ public class SudokuGUI extends JFrame {
                 JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
         if (choice != -1) {
-            // NEW: Save the difficulty choice
             currentDifficulty = options[choice];
             int[][] board = controller.getGame(options[choice]);
-            loadGameToBoard(board);
+            controller.createIncompleteGame(board);
+            loadGameToBoard(board, board);
         } else {
             System.exit(0);
         }
     }
 
-    private void loadGameToBoard(int[][] board) {
+
+    private void loadGameToBoard(int[][] currentBoard, int[][] initialBoard) {
         isProgrammaticUpdate = true;
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
-                if (board[i][j] != 0) {
-                    cells[i][j].setText(String.valueOf(board[i][j]));
+                int val = currentBoard[i][j];
+
+                if (val != 0) {
+                    cells[i][j].setText(String.valueOf(val));
+                } else {
+                    cells[i][j].setText("");
+                }
+
+                if (initialBoard[i][j] != 0) {
                     cells[i][j].setEditable(false);
                     cells[i][j].setBackground(Color.LIGHT_GRAY);
                 } else {
-                    cells[i][j].setText("");
                     cells[i][j].setEditable(true);
                     cells[i][j].setBackground(Color.WHITE);
                 }
@@ -141,6 +147,11 @@ public class SudokuGUI extends JFrame {
         }
         checkSolveButton();
         isProgrammaticUpdate = false;
+    }
+
+
+    private void loadGameToBoard(int[][] board) {
+        loadGameToBoard(board, board);
     }
 
     private void handleInputChange(int r, int c) {
@@ -188,7 +199,6 @@ public class SudokuGUI extends JFrame {
         String result = controller.verifyGame(currentBoard);
         JOptionPane.showMessageDialog(this, "Verification Result: " + result);
 
-        // NEW: If valid, delete the game and close
         if (result.equals("VALID")) {
             controller.onGameWon(currentDifficulty);
             JOptionPane.showMessageDialog(this, "Game Completed! File deleted.\nExiting...");
@@ -200,7 +210,7 @@ public class SudokuGUI extends JFrame {
         try {
             int[][] currentBoard = parseBoard();
             int[][] solved = controller.solveGame(currentBoard);
-            loadGameToBoard(solved);
+            loadGameToBoard(solved); // Show solved state
             JOptionPane.showMessageDialog(this, "Puzzle Solved!");
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Solver failed: " + e.getMessage());
@@ -232,4 +242,5 @@ public class SudokuGUI extends JFrame {
         }
         sc.close();
         return board;
-    }}
+    }
+}

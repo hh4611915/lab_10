@@ -29,43 +29,34 @@ public class Storage {
 
     public Catalog getCatalogInfo() {
         Catalog c = new Catalog();
-
-        File unfinished = new File("incomplete/game.csv");
-        c.current = unfinished.exists();
-
-        boolean easy = new File("easy/game.csv").exists();
-        boolean med = new File("medium/game.csv").exists();
-        boolean hard = new File("hard/game.csv").exists();
-
-        c.allModesExist = easy && med && hard;
-
+        c.current = new File("incomplete/game.csv").exists();
+        c.allModesExist = new File("easy/game.csv").exists() &&
+                new File("medium/game.csv").exists() &&
+                new File("hard/game.csv").exists();
         return c;
     }
 
     public void saveGame(String folder, int[][] board) throws IOException {
         File file = new File(folder + "/game.csv");
-
         try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
             for (int i = 0; i < 9; i++) {
                 for (int j = 0; j < 9; j++) {
                     writer.print(board[i][j]);
-                    if (j < 8) {
-                        writer.print(",");
-                    }
+                    if (j < 8) writer.print(",");
                 }
                 writer.println();
             }
         }
     }
 
-    public int[][] loadGame(String folder) throws NotFoundException {
+    // NEW: Loads ONLY the CSV file (no logs). Used to check original fixed numbers.
+    public int[][] loadRawBoard(String folder) throws NotFoundException {
         File file = new File(folder + "/game.csv");
         if (!file.exists()) {
             throw new NotFoundException("No game found in folder: " + folder);
         }
 
         int[][] board = new int[9][9];
-
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             int row = 0;
@@ -78,31 +69,51 @@ public class Storage {
                 }
                 row++;
             }
-        } catch (FileNotFoundException e) {
-            throw new NotFoundException("Could not find FILE: " + folder);
         } catch (IOException | NumberFormatException e) {
             throw new NotFoundException("Error reading file: " + folder);
         }
         return board;
     }
 
+    public int[][] loadGame(String folder) throws NotFoundException {
+        // 1. Load the base board
+        int[][] board = loadRawBoard(folder);
+
+        // 2. If 'incomplete', replay logs on top of it
+        if (folder.equals("incomplete")) {
+            File logFile = new File("incomplete/log.csv");
+            if (logFile.exists()) {
+                try (BufferedReader logReader = new BufferedReader(new FileReader(logFile))) {
+                    String logLine;
+                    while ((logLine = logReader.readLine()) != null) {
+                        String[] parts = logLine.split(",");
+                        if (parts.length >= 3) {
+                            int r = Integer.parseInt(parts[0]);
+                            int c = Integer.parseInt(parts[1]);
+                            int val = Integer.parseInt(parts[2]);
+                            board[r][c] = val;
+                        }
+                    }
+                } catch (IOException e) {
+                    System.out.println("Warning: Could not replay log.");
+                }
+            }
+        }
+        return board;
+    }
+
     public void deleteGame(String folder) {
         File file = new File(folder + "/game.csv");
-        if (file.exists()) {
-            file.delete();
-        }
+        if (file.exists()) file.delete();
 
         if (folder.equals("incomplete")) {
             File log = new File("incomplete/log.csv");
-            if (log.exists()) {
-                log.delete();
-            }
+            if (log.exists()) log.delete();
         }
     }
 
     public void logMove(int x, int y, int val, int prev) throws IOException {
         File logFile = new File("incomplete/log.csv");
-
         try (PrintWriter pw = new PrintWriter(new FileWriter(logFile, true))) {
             pw.println(x + "," + y + "," + val + "," + prev);
         }
@@ -121,7 +132,6 @@ public class Storage {
         }
 
         if (lines.isEmpty()) return null;
-
         String lastAction = lines.remove(lines.size() - 1);
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(logFile))) {
@@ -129,7 +139,6 @@ public class Storage {
                 pw.println(lines.get(i));
             }
         }
-
         return lastAction;
     }
 }

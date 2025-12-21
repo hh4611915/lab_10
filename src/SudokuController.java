@@ -31,6 +31,19 @@ public class SudokuController {
         return storage.loadGame(levelName.toLowerCase());
     }
 
+    // NEW: Gets the board WITHOUT replaying logs (to know what was fixed)
+    public int[][] getInitialGame(String levelName) {
+        return storage.loadRawBoard(levelName.toLowerCase());
+    }
+
+    public void createIncompleteGame(int[][] board) {
+        try {
+            storage.saveGame("incomplete", board);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public String verifyGame(int[][] game) {
         return SudokuVerifier.verify(game);
     }
@@ -60,16 +73,14 @@ public class SudokuController {
     }
 
     public int[][] solveGame(int[][] game) throws Exception {
-        return new SudokuSolver().solve(game);
+        new SudokuSolver().solve(game);
+        return game;
     }
 
-    // [cite: 72, 146] NEW METHOD: Handles deletion when game is won
     public void onGameWon(String difficulty) {
-        // 1. Delete the file for the specific difficulty (e.g., easy/game.csv)
         if (difficulty != null && !difficulty.equals("incomplete")) {
             storage.deleteGame(difficulty.toLowerCase());
         }
-        // 2. Always delete the 'incomplete' file and log (current game state)
         storage.deleteGame("incomplete");
     }
 }
