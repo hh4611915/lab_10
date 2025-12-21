@@ -10,7 +10,6 @@ public class GameGenerator {
         SudokuBoard board = new SudokuBoard(solved);
         RandomPairs rp = new RandomPairs();
 
-        
         int removeCount = switch (level) {
             case EASY -> 10;
             case MEDIUM -> 20;
@@ -19,9 +18,13 @@ public class GameGenerator {
 
         List<int[]> pairs = rp.generateDistinctPairs(removeCount);
 
-
         for (int[] p : pairs) {
-            board.setCell(p[0], p[1], 0);
+
+            int index = p[0];
+            int row = index / 9;
+            int col = index % 9;
+
+            board.setCell(row, col, 0);
         }
 
         return board;
