@@ -1,5 +1,7 @@
 package src;
 
+import src.View.SudokuGUI;
+
 import javax.swing.SwingUtilities;
 
 public class Main {
